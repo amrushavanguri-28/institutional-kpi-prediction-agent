@@ -6,6 +6,8 @@ import {
   formatStudentRiskCsv,
   formatAdmissionsForecastCsv,
   formatLLMJsonl,
+  N8N_TOOL_DEFINITIONS,
+  RAG_INSTITUTIONAL_KNOWLEDGE_BASE,
 } from '../../utils/trainingDataGenerator';
 import {
   Download,
@@ -19,10 +21,16 @@ import {
   Sparkles,
   BookOpen,
   Terminal,
+  Workflow,
+  ExternalLink,
+  Database,
+  Zap,
 } from 'lucide-react';
 
 export const AiTrainingDataHub: React.FC = () => {
-  const [hubTab, setHubTab] = useState<'llm' | 'student_ml' | 'admissions_ml' | 'guide'>('llm');
+  const [hubTab, setHubTab] = useState<
+    'llm' | 'student_ml' | 'admissions_ml' | 'n8n_tools' | 'rag' | 'guide'
+  >('llm');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const studentMlData = React.useMemo(() => generateStudentRiskDataset(60), []);
@@ -54,6 +62,22 @@ export const AiTrainingDataHub: React.FC = () => {
     downloadFile(csv, 'admissions_forecasting_train.csv', 'text/csv');
   };
 
+  const handleDownloadN8nToolsJson = () => {
+    downloadFile(
+      JSON.stringify(N8N_TOOL_DEFINITIONS, null, 2),
+      'n8n_agent_tool_definitions.json',
+      'application/json'
+    );
+  };
+
+  const handleDownloadRagJson = () => {
+    downloadFile(
+      JSON.stringify(RAG_INSTITUTIONAL_KNOWLEDGE_BASE, null, 2),
+      'institutional_policy_rag_knowledge.json',
+      'application/json'
+    );
+  };
+
   const handleCopySample = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
@@ -67,15 +91,18 @@ export const AiTrainingDataHub: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-            <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
-              Machine Learning & Generative AI Data Foundry
+            <span className="text-xs font-bold uppercase tracking-wider text-orange-400">
+              AI Agent Training & Knowledge Foundry
             </span>
           </div>
-          <h2 className="text-lg font-bold text-slate-100">
-            Institutional AI Agent Training & Fine-Tuning Datasets
+          <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+            <span>Institutional AI Datasets for Training & n8n Workflows</span>
+            <span className="text-[10px] font-mono bg-orange-950 text-orange-300 px-2 py-0.5 rounded border border-orange-800">
+              qF2Vo7eMkm90uYfP
+            </span>
           </h2>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            Export ready-to-use supervised instruction-tuning pairs (JSONL) for Gemini / LLMs and high-density feature datasets (CSV) for predictive ML models.
+            Export ready-to-use supervised instruction-tuning pairs (JSONL) for Gemini/LLMs, high-density ML tabular datasets (CSV), n8n AI Agent tool definitions, and RAG knowledge base chunks.
           </p>
         </div>
 
@@ -99,17 +126,17 @@ export const AiTrainingDataHub: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={handleDownloadAdmissionsCsv}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+            onClick={handleDownloadN8nToolsJson}
+            className="px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Admissions CSV</span>
+            <Workflow className="w-3.5 h-3.5" />
+            <span>n8n Tools JSON</span>
           </button>
         </div>
       </div>
 
       {/* Sub Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 text-xs">
+      <div className="flex items-center gap-2 border-b border-slate-200 text-xs overflow-x-auto whitespace-nowrap scrollbar-thin">
         <button
           type="button"
           onClick={() => setHubTab('llm')}
@@ -145,14 +172,36 @@ export const AiTrainingDataHub: React.FC = () => {
         </button>
         <button
           type="button"
-          onClick={() => setHubTab('guide')}
+          onClick={() => setHubTab('n8n_tools')}
           className={`pb-2.5 font-bold transition-colors border-b-2 cursor-pointer ${
-            hubTab === 'guide'
-              ? 'border-indigo-600 text-indigo-700'
+            hubTab === 'n8n_tools'
+              ? 'border-orange-600 text-orange-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          4. Training Guide & Implementation Code
+          4. n8n Agent Tools (JSON Schemas)
+        </button>
+        <button
+          type="button"
+          onClick={() => setHubTab('rag')}
+          className={`pb-2.5 font-bold transition-colors border-b-2 cursor-pointer ${
+            hubTab === 'rag'
+              ? 'border-purple-600 text-purple-700'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          5. Institutional RAG Knowledge (JSON)
+        </button>
+        <button
+          type="button"
+          onClick={() => setHubTab('guide')}
+          className={`pb-2.5 font-bold transition-colors border-b-2 cursor-pointer ${
+            hubTab === 'guide'
+              ? 'border-slate-800 text-slate-900'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          6. Training & n8n Integration Guide
         </button>
       </div>
 
@@ -365,9 +414,159 @@ export const AiTrainingDataHub: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 4: Guide & Implementation Snippets */}
+      {/* Tab 4: n8n Agent Tool Calling Schemas (JSON) */}
+      {hubTab === 'n8n_tools' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between text-xs text-slate-600">
+            <span>
+              <strong>{N8N_TOOL_DEFINITIONS.length} Pre-built Tool / Function Calling Schemas</strong> for n8n AI Agent nodes.
+            </span>
+            <button
+              type="button"
+              onClick={handleDownloadN8nToolsJson}
+              className="text-orange-700 hover:text-orange-900 font-semibold flex items-center gap-1 cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export Tools JSON</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {N8N_TOOL_DEFINITIONS.map((tool) => (
+              <div
+                key={tool.name}
+                className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs space-y-3 text-xs"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded bg-orange-100 text-orange-800 font-bold flex items-center justify-center font-mono text-[11px]">
+                      fn
+                    </span>
+                    <h4 className="font-mono font-bold text-slate-900 text-xs">{tool.name}</h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopySample(tool.name, JSON.stringify(tool, null, 2))}
+                    className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+                    title="Copy schema"
+                  >
+                    {copiedId === tool.name ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+                <p className="text-slate-600 text-[11px] leading-relaxed">{tool.description}</p>
+
+                {/* Schema preview */}
+                <div className="bg-slate-900 rounded-lg p-2.5 text-slate-200 font-mono text-[10px] max-h-36 overflow-y-auto">
+                  <pre>{JSON.stringify(tool.parameters, null, 2)}</pre>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tab 5: Institutional Policy RAG Knowledge (JSON) */}
+      {hubTab === 'rag' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between text-xs text-slate-600">
+            <span>
+              <strong>{RAG_INSTITUTIONAL_KNOWLEDGE_BASE.length} Regulatory & Criteria Chunks</strong> ready for n8n Vector Store / Pinecone / Qdrant.
+            </span>
+            <button
+              type="button"
+              onClick={handleDownloadRagJson}
+              className="text-purple-700 hover:text-purple-900 font-semibold flex items-center gap-1 cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export RAG JSON</span>
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {RAG_INSTITUTIONAL_KNOWLEDGE_BASE.map((chunk) => (
+              <div
+                key={chunk.id}
+                className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs space-y-2 text-xs"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-800">
+                      {chunk.id}
+                    </span>
+                    <h4 className="font-bold text-slate-900 text-xs">{chunk.topic}</h4>
+                    <span className="text-[10px] text-slate-400">({chunk.category})</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopySample(chunk.id, chunk.content)}
+                    className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+                    title="Copy chunk"
+                  >
+                    {copiedId === chunk.id ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-lg text-slate-700 leading-relaxed font-sans text-xs whitespace-pre-line border border-slate-200/60">
+                  {chunk.content}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tab 6: Guide & Implementation Snippets */}
       {hubTab === 'guide' && (
         <div className="space-y-5 text-xs">
+          {/* n8n Workflow Direct Integration Guide */}
+          <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-200 p-5 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Workflow className="w-5 h-5 text-orange-600" />
+                <h3 className="text-sm font-bold text-orange-950">
+                  Connecting to n8n Cloud Workflow: qF2Vo7eMkm90uYfP
+                </h3>
+              </div>
+              <a
+                href="https://amrushavanguri.app.n8n.cloud/workflow/qF2Vo7eMkm90uYfP"
+                target="_blank"
+                rel="noreferrer"
+                className="px-2.5 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <span>Open Canvas in n8n</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+            <p className="text-orange-900 leading-relaxed">
+              Your institutional web application is configured to transmit queries and institutional metrics directly to your workflow on <strong>amrushavanguri.app.n8n.cloud</strong>. Follow these simple steps inside your n8n workflow canvas:
+            </p>
+
+            <ol className="list-decimal list-inside space-y-2 text-slate-800 bg-white/80 p-3.5 rounded-lg border border-orange-200">
+              <li>
+                <strong>Trigger Node:</strong> Add a <em>Chat Trigger</em> or <em>Webhook</em> node in n8n. Set the HTTP Method to <code>POST</code>.
+              </li>
+              <li>
+                <strong>AI Agent Node:</strong> Connect the trigger to an <em>AI Agent</em> node with an LLM Model (e.g. Gemini 3.8 Flash, OpenAI GPT-4o, or Anthropic Claude).
+              </li>
+              <li>
+                <strong>System Prompt:</strong> Paste the system prompt from the <strong>LLM Fine-Tuning tab</strong> above so the agent knows to answer using <code>CURRENT SITUATION</code>, <code>RISK AREAS</code>, <code>HISTORICAL TREND</code>, and <code>EMERGING RISKS</code>.
+              </li>
+              <li>
+                <strong>Tools / Knowledge:</strong> Add a <em>Tool</em> node and import the <strong>n8n Agent Tools JSON</strong> schemas from Tab 4, or attach an <em>In-Memory Vector Store</em> with the RAG Chunks from Tab 5.
+              </li>
+              <li>
+                <strong>Webhook Response:</strong> Connect the agent output to the Webhook response. In the website settings or floating widget, enter your Webhook URL (e.g., <code>https://amrushavanguri.app.n8n.cloud/webhook/qF2Vo7eMkm90uYfP/chat</code>).
+              </li>
+            </ol>
+          </div>
+
           {/* Section 1: LLM Fine-Tuning Instructions */}
           <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-3">
             <div className="flex items-center gap-2">

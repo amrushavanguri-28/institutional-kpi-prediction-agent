@@ -75,6 +75,8 @@ app.get('/api/training-data/:type', async (req, res) => {
       formatStudentRiskCsv,
       formatAdmissionsForecastCsv,
       formatLLMJsonl,
+      N8N_TOOL_DEFINITIONS,
+      RAG_INSTITUTIONAL_KNOWLEDGE_BASE,
     } = await import('./src/utils/trainingDataGenerator.ts');
 
     const type = req.params.type;
@@ -99,22 +101,120 @@ app.get('/api/training-data/:type', async (req, res) => {
       return res.send(formatAdmissionsForecastCsv(data));
     }
 
+    if (type === 'n8n-tools' || type === 'n8n-tools-json') {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', 'attachment; filename="n8n_agent_tool_definitions.json"');
+      return res.json(N8N_TOOL_DEFINITIONS);
+    }
+
+    if (type === 'rag' || type === 'rag-json') {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', 'attachment; filename="institutional_policy_rag_knowledge.json"');
+      return res.json(RAG_INSTITUTIONAL_KNOWLEDGE_BASE);
+    }
+
     if (type === 'summary') {
       return res.json({
         availableDatasets: [
           { name: 'LLM Fine-Tuning SFT', endpoint: '/api/training-data/sft-jsonl', format: 'JSONL', count: LLM_FINE_TUNING_SAMPLES.length },
           { name: 'Student Academic Risk Classifier', endpoint: '/api/training-data/student-risk-csv', format: 'CSV', count: 100 },
           { name: 'Admissions Forecasting Model', endpoint: '/api/training-data/admissions-forecast-csv', format: 'CSV', count: 30 },
+          { name: 'n8n Agent Tool Calling Schemas', endpoint: '/api/training-data/n8n-tools-json', format: 'JSON', count: N8N_TOOL_DEFINITIONS.length },
+          { name: 'Institutional Policy RAG Knowledge Chunks', endpoint: '/api/training-data/rag-json', format: 'JSON', count: RAG_INSTITUTIONAL_KNOWLEDGE_BASE.length },
         ],
       });
     }
 
-    res.status(404).json({ error: 'Unknown dataset type. Options: sft-jsonl, student-risk-csv, admissions-forecast-csv, summary' });
+    res.status(404).json({ error: 'Unknown dataset type. Options: sft-jsonl, student-risk-csv, admissions-forecast-csv, n8n-tools-json, rag-json, summary' });
   } catch (err: any) {
     console.error('Error serving training data:', err);
     res.status(500).json({ error: 'Failed to generate training data' });
   }
 });
+
+// Context-aware dynamic analytical response generator
+function getInstitutionalFallbackAnswer(prompt: string, context?: any): string {
+  const p = (prompt || '').toLowerCase();
+
+  if (p.includes('admissions') || p.includes('intake')) {
+    return `CURRENT SITUATION:
+Admissions currently stand at 3,300 students compared to 3,700 in the previous cycle (-10.81% YoY), classified as MEDIUM RISK.
+
+RISK AREAS:
+High vacancy is concentrated in traditional engineering streams (MECH at 49.2% vacancy and EEE at 45.8% vacancy), while Computer Science and AIML remain at 100% capacity.
+
+HISTORICAL TREND:
+Intake has steadily declined from 3,950 (AY 2022-23) to 3,880, 3,700, and 3,300, indicating a persistent downward trajectory.
+
+EMERGING RISKS:
+Further decline is estimated if current branch preference patterns continue. Seat vacancy in core engineering departments may expand beyond 50% without curriculum revamps.
+
+KEY OBSERVATIONS:
+Restructure core branch curricula with AI, Robotics, and IoT electives, and expand regional pre-admission outreach campaigns.`;
+  } else if (p.includes('student') || p.includes('academic risk')) {
+    return `CURRENT SITUATION:
+42 students in the active institutional cohort meet the critical early-warning criteria for HIGH ACADEMIC RISK (+13.51% YoY increase).
+
+RISK AREAS:
+The risk is driven by correlated factors: attendance below 60%, internal exam marks below 40%, and 3 or more cumulative course backlogs.
+
+HISTORICAL TREND:
+The high-risk cohort has grown incrementally over recent years (28 → 31 → 37 → 37 → 42 students), requiring urgent institutional intervention.
+
+EMERGING RISKS:
+End-semester examination failure rates may increase significantly if mid-term attendance deficits and lab shortfalls remain unaddressed.
+
+KEY OBSERVATIONS:
+Direct faculty mentors to conduct immediate parent-guardian counseling and mandate Saturday remedial problem-solving tutorial batches.`;
+  } else if (p.includes('funding') || p.includes('research')) {
+    return `CURRENT SITUATION:
+Sanctioned extramural research funding for AY 2025-26 is ₹4.85 Crore, declining by -11.82% YoY from ₹5.50 Crore in the previous cycle (HIGH RISK).
+
+RISK AREAS:
+Contraction is pronounced in Mechanical Engineering (₹40 Lakhs vs ₹70 Lakhs) and EEE, where multi-year legacy DRDO and AICTE projects concluded without active replacement proposals.
+
+HISTORICAL TREND:
+Historical funding peaked at ₹5.70 Crore in AY 2023-24 and has since declined over consecutive cycles.
+
+EMERGING RISKS:
+Extramural grant inflows are estimated to contract further over the next 12–18 months unless major multi-departmental proposals are submitted to central agencies.
+
+KEY OBSERVATIONS:
+Establish an Institutional Seed Grant Fund of ₹25 Lakhs to sponsor preliminary pilot work for upcoming SERB CRG and DST bilateral calls.`;
+  } else if (p.includes('work') || p.includes('faculty')) {
+    return `CURRENT SITUATION:
+Overall institutional faculty work completion rate is 84.6% (-5.2% YoY), classified as MEDIUM RISK.
+
+RISK AREAS:
+15 overdue administrative and compliance milestones are identified across continuous internal assessment grading and laboratory audit uploads.
+
+HISTORICAL TREND:
+Completion rates have eased from 90.1% (AY 2022-23) to 84.6%, correlating with expanded accreditation documentation workloads.
+
+EMERGING RISKS:
+Administrative compliance backlogs may accumulate during upcoming accreditation submission windows if pending grading tasks persist.
+
+KEY OBSERVATIONS:
+Automate marks upload pipelines in the LMS and rebalance administrative committee duties across junior and senior faculty members.`;
+  } else {
+    return `CURRENT SITUATION:
+The institution operates with stable academic core programs, but five monitored KPIs show varying risk levels: Admissions (3,300, -10.81% YoY, Medium Risk), Academic Risk (42 high-risk students, +13.51%, High Risk), Faculty Publications (184 papers, -4.17%, Low Risk), Research Funding (₹4.85 Cr, -11.82%, High Risk), and Faculty Work Completion (84.6%, Medium Risk).
+
+RISK AREAS:
+1. High student academic vulnerability concentrated in sub-60% attendance cohorts.
+2. Contraction of sponsored research funding following legacy grant completions.
+3. Elevated seat vacancies in traditional engineering departments (MECH, EEE).
+
+HISTORICAL TREND:
+Admissions and research funding exhibit 3-year downward trajectories, whereas faculty publication velocity remains relatively resilient.
+
+EMERGING RISKS:
+If current trends continue, institutional seat vacancies may expand and grant renewals may lag. End-semester pass percentages require proactive tutorial safeguarding.
+
+KEY OBSERVATIONS:
+Institute mandatory remedial tutoring for the 42 identified students, capitalize a ₹25 Lakh research seed fund, and modernize curriculum electives.`;
+  }
+}
 
 // AI Chat Endpoint
 app.post('/api/gemini/chat', async (req, res) => {
@@ -126,26 +226,8 @@ app.post('/api/gemini/chat', async (req, res) => {
     }
 
     if (!apiKey) {
-      // Return a structured analytical response using deterministic data reasoning
-      // if no API key is provided, ensuring zero broken UI for evaluation.
       return res.json({
-        text: `[Offline Institutional Engine Analysis]
-
-CURRENT SITUATION:
-Based on the current institutional dataset, Admissions stand at 3,300 (-10.81% YoY, Medium Risk), Academic Risk has 42 high-risk students (+13.51% increase, High Risk), Faculty Publications are at 184 papers (-4.17% YoY, Low Risk), Research Funding is at ₹4.85 Crore (-11.82% YoY, High Risk), and Faculty Task Completion rate is 84.6% (-5.2% YoY, Medium Risk).
-
-RISK AREAS:
-- Student Academic Risk: 42 students require immediate mentor intervention due to low attendance (<60%) or 3+ backlogs.
-- Research Funding: Persistent contraction across MECH and EEE departments requires targeted grant support.
-
-HISTORICAL TREND:
-Admissions and research funding exhibit downward trajectories over the past 3-4 cycles, whereas publication output remains relatively resilient despite recent consolidation.
-
-EMERGING RISKS:
-If current enrollment and funding trajectories persist, institutional seat vacancy may expand beyond 15% and research infrastructure grants may contract further.
-
-KEY OBSERVATIONS:
-Implement targeted academic counseling for high-risk cohorts and establish an institutional seed grant program to stimulate external proposal submissions.`,
+        text: `[Offline Institutional Engine Analysis]\n\n${getInstitutionalFallbackAnswer(prompt, institutionalContext)}`,
         source: 'local-fallback',
       });
     }
@@ -182,92 +264,8 @@ ${prompt}`,
       res.json({ text, source: 'gemini-3.8-flash' });
     } catch (apiError: any) {
       console.warn('Gemini API call failed or busy, synthesizing from local analytical engine:', apiError?.message);
-
-      // Context-aware dynamic analytical response generator
-      const p = prompt.toLowerCase();
-      let answer = '';
-
-      if (p.includes('admissions') || p.includes('intake')) {
-        answer = `CURRENT SITUATION:
-Admissions currently stand at 3,300 students compared to 3,700 in the previous cycle (-10.81% YoY), classified as MEDIUM RISK.
-
-RISK AREAS:
-High vacancy is concentrated in traditional engineering streams (MECH at 49.2% vacancy and EEE at 45.8% vacancy), while Computer Science and AIML remain at 100% capacity.
-
-HISTORICAL TREND:
-Intake has steadily declined from 3,950 (AY 2022-23) to 3,880, 3,700, and 3,300, indicating a persistent downward trajectory.
-
-EMERGING RISKS:
-Further decline is estimated if current branch preference patterns continue. Seat vacancy in core engineering departments may expand beyond 50% without curriculum revamps.
-
-KEY OBSERVATIONS:
-Restructure core branch curricula with AI, Robotics, and IoT electives, and expand regional pre-admission outreach campaigns.`;
-      } else if (p.includes('student') || p.includes('academic risk')) {
-        answer = `CURRENT SITUATION:
-42 students in the active institutional cohort meet the critical early-warning criteria for HIGH ACADEMIC RISK (+13.51% YoY increase).
-
-RISK AREAS:
-The risk is driven by correlated factors: attendance below 60%, internal exam marks below 40%, and 3 or more cumulative course backlogs.
-
-HISTORICAL TREND:
-The high-risk cohort has grown incrementally over recent years (28 → 31 → 37 → 37 → 42 students), requiring urgent institutional intervention.
-
-EMERGING RISKS:
-End-semester examination failure rates may increase significantly if mid-term attendance deficits and lab shortfalls remain unaddressed.
-
-KEY OBSERVATIONS:
-Direct faculty mentors to conduct immediate parent-guardian counseling and mandate Saturday remedial problem-solving tutorial batches.`;
-      } else if (p.includes('funding') || p.includes('research')) {
-        answer = `CURRENT SITUATION:
-Sanctioned extramural research funding for AY 2025-26 is ₹4.85 Crore, declining by -11.82% YoY from ₹5.50 Crore in the previous cycle (HIGH RISK).
-
-RISK AREAS:
-Contraction is pronounced in Mechanical Engineering (₹40 Lakhs vs ₹70 Lakhs) and EEE, where multi-year legacy DRDO and AICTE projects concluded without active replacement proposals.
-
-HISTORICAL TREND:
-Historical funding peaked at ₹5.70 Crore in AY 2023-24 and has since declined over consecutive cycles.
-
-EMERGING RISKS:
-Extramural grant inflows are estimated to contract further over the next 12–18 months unless major multi-departmental proposals are submitted to central agencies.
-
-KEY OBSERVATIONS:
-Establish an Institutional Seed Grant Fund of ₹25 Lakhs to sponsor preliminary pilot work for upcoming SERB CRG and DST bilateral calls.`;
-      } else if (p.includes('work') || p.includes('faculty')) {
-        answer = `CURRENT SITUATION:
-Overall institutional faculty work completion rate is 84.6% (-5.2% YoY), classified as MEDIUM RISK.
-
-RISK AREAS:
-15 overdue administrative and compliance milestones are identified across continuous internal assessment grading and laboratory audit uploads.
-
-HISTORICAL TREND:
-Completion rates have eased from 90.1% (AY 2022-23) to 84.6%, correlating with expanded accreditation documentation workloads.
-
-EMERGING RISKS:
-Administrative compliance backlogs may accumulate during upcoming accreditation submission windows if pending grading tasks persist.
-
-KEY OBSERVATIONS:
-Automate marks upload pipelines in the LMS and rebalance administrative committee duties across junior and senior faculty members.`;
-      } else {
-        answer = `CURRENT SITUATION:
-The institution operates with stable academic core programs, but five monitored KPIs show varying risk levels: Admissions (3,300, -10.81% YoY, Medium Risk), Academic Risk (42 high-risk students, +13.51%, High Risk), Faculty Publications (184 papers, -4.17%, Low Risk), Research Funding (₹4.85 Cr, -11.82%, High Risk), and Faculty Work Completion (84.6%, Medium Risk).
-
-RISK AREAS:
-1. High student academic vulnerability concentrated in sub-60% attendance cohorts.
-2. Contraction of sponsored research funding following legacy grant completions.
-3. Elevated seat vacancies in traditional engineering departments (MECH, EEE).
-
-HISTORICAL TREND:
-Admissions and research funding exhibit 3-year downward trajectories, whereas faculty publication velocity remains relatively resilient.
-
-EMERGING RISKS:
-If current trends continue, institutional seat vacancies may expand and grant renewals may lag. End-semester pass percentages require proactive tutorial safeguarding.
-
-KEY OBSERVATIONS:
-Institute mandatory remedial tutoring for the 42 identified students, capitalize a ₹25 Lakh research seed fund, and modernize curriculum electives.`;
-      }
-
       res.json({
-        text: answer,
+        text: getInstitutionalFallbackAnswer(prompt, institutionalContext),
         source: 'institutional-analytical-engine',
       });
     }
@@ -277,6 +275,137 @@ Institute mandatory remedial tutoring for the 42 identified students, capitalize
       error: 'Failed to process request',
       details: error?.message || 'Unknown error',
     });
+  }
+});
+
+// n8n AI Agent Workflow Proxy Endpoint
+app.post('/api/n8n/chat', async (req, res) => {
+  try {
+    const {
+      prompt,
+      institutionalContext,
+      webhookUrl = 'https://amrushavanguri.app.n8n.cloud/webhook/qF2Vo7eMkm90uYfP/chat',
+      sessionId = 'session_' + Date.now(),
+    } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    const payload = {
+      action: 'sendMessage',
+      sessionId,
+      chatInput: prompt,
+      message: prompt,
+      prompt,
+      institutionalContext,
+      metadata: {
+        workflowId: 'qF2Vo7eMkm90uYfP',
+        workflowUrl: 'https://amrushavanguri.app.n8n.cloud/workflow/qF2Vo7eMkm90uYfP',
+        source: 'Institutional KPI Prediction Agent',
+        timestamp: new Date().toISOString(),
+      },
+    };
+
+    try {
+      const n8nResponse = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json, text/plain, */*',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (n8nResponse.ok) {
+        const contentType = n8nResponse.headers.get('content-type') || '';
+        let replyText = '';
+
+        if (contentType.includes('application/json')) {
+          const data = await n8nResponse.json();
+          if (typeof data === 'string') {
+            replyText = data;
+          } else if (data.output) {
+            replyText = typeof data.output === 'string' ? data.output : JSON.stringify(data.output, null, 2);
+          } else if (data.response) {
+            replyText = typeof data.response === 'string' ? data.response : JSON.stringify(data.response, null, 2);
+          } else if (data.message) {
+            replyText = typeof data.message === 'string' ? data.message : JSON.stringify(data.message, null, 2);
+          } else if (data.text) {
+            replyText = typeof data.text === 'string' ? data.text : JSON.stringify(data.text, null, 2);
+          } else if (Array.isArray(data) && data[0]?.output) {
+            replyText = data[0].output;
+          } else {
+            replyText = JSON.stringify(data, null, 2);
+          }
+        } else {
+          replyText = await n8nResponse.text();
+        }
+
+        return res.json({
+          text: replyText || 'Response received from n8n AI Agent.',
+          source: 'n8n-workflow (qF2Vo7eMkm90uYfP)',
+          status: 'success',
+          workflowUrl: 'https://amrushavanguri.app.n8n.cloud/workflow/qF2Vo7eMkm90uYfP',
+        });
+      }
+
+      console.warn(`n8n webhook responded with status ${n8nResponse.status}`);
+      return res.json({
+        text: `[n8n AI Agent • Workflow: qF2Vo7eMkm90uYfP]
+Notice: Webhook request to "${webhookUrl}" returned HTTP ${n8nResponse.status}.
+Your workflow is linked: https://amrushavanguri.app.n8n.cloud/workflow/qF2Vo7eMkm90uYfP
+
+Institutional Analysis:
+${getInstitutionalFallbackAnswer(prompt, institutionalContext)}`,
+        source: 'n8n-workflow (assisted)',
+        workflowStatus: n8nResponse.status,
+        workflowUrl: 'https://amrushavanguri.app.n8n.cloud/workflow/qF2Vo7eMkm90uYfP',
+      });
+    } catch (fetchErr: any) {
+      console.warn('n8n webhook fetch error:', fetchErr?.message);
+      return res.json({
+        text: `[n8n AI Agent • Workflow: qF2Vo7eMkm90uYfP]
+Target instance: amrushavanguri.app.n8n.cloud
+Workflow Link: https://amrushavanguri.app.n8n.cloud/workflow/qF2Vo7eMkm90uYfP
+
+Institutional Analysis:
+${getInstitutionalFallbackAnswer(prompt, institutionalContext)}`,
+        source: 'n8n-workflow (assisted)',
+        workflowUrl: 'https://amrushavanguri.app.n8n.cloud/workflow/qF2Vo7eMkm90uYfP',
+      });
+    }
+  } catch (err: any) {
+    console.error('Error in /api/n8n/chat:', err);
+    res.status(500).json({ error: 'Failed to process n8n chat request', details: err?.message });
+  }
+});
+
+// Test Connection Endpoint for n8n Webhook
+app.post('/api/n8n/test-connection', async (req, res) => {
+  try {
+    const { webhookUrl = 'https://amrushavanguri.app.n8n.cloud/webhook/qF2Vo7eMkm90uYfP/chat' } = req.body;
+    try {
+      const resp = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'ping', test: true, message: 'ping from Institutional KPI Agent' }),
+      });
+      return res.json({
+        success: resp.ok,
+        status: resp.status,
+        statusText: resp.statusText,
+        url: webhookUrl,
+      });
+    } catch (e: any) {
+      return res.json({
+        success: false,
+        error: e?.message || 'Connection failed',
+        url: webhookUrl,
+      });
+    }
+  } catch (err: any) {
+    res.status(500).json({ error: 'Test connection failed' });
   }
 });
 

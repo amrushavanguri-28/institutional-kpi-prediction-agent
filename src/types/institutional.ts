@@ -124,3 +124,13 @@ export interface HistoricalYearSummary {
   researchFundingInr: number;
   workCompletionRate: number;
 }
+
+export interface N8nConfig {
+  workflowId: string;
+  workflowUrl: string;
+  webhookUrl: string;
+  testWebhookUrl: string;
+  useTestMode: boolean;
+  enabled: boolean;
+}
+

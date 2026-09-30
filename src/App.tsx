@@ -11,6 +11,8 @@ import { StudentModal } from './components/common/StudentModal';
 import { FacultyModal } from './components/common/FacultyModal';
 import { AlertCenterDrawer } from './components/common/AlertCenterDrawer';
 import { SettingsModal } from './components/common/SettingsModal';
+import { N8nAgentWidget } from './components/common/N8nAgentWidget';
+import { AiTrainingDataHub } from './components/common/AiTrainingDataHub';
 
 import { DashboardView } from './views/DashboardView';
 import { AdmissionsView } from './views/AdmissionsView';
@@ -42,6 +44,12 @@ const MainContent: React.FC = () => {
         return <FacultyWorkView />;
       case 'AI Assistant':
         return <AiAssistantView />;
+      case 'AI Training & n8n Hub':
+        return (
+          <div className="space-y-6">
+            <AiTrainingDataHub />
+          </div>
+        );
       case 'Reports':
         return <ReportsView />;
       case 'Data Management':
@@ -78,6 +86,9 @@ const MainContent: React.FC = () => {
       <FacultyModal />
       <AlertCenterDrawer />
       <SettingsModal />
+
+      {/* Persistent Universal n8n AI Agent Floating Widget across all pages */}
+      <N8nAgentWidget />
     </div>
   );
 };

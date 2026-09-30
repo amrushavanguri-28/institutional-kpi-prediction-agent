@@ -9,6 +9,7 @@ import {
   CalculatedKpi,
   EmergingRiskPrediction,
   InstitutionalAlert,
+  N8nConfig,
 } from '../types/institutional';
 import {
   DEFAULT_ADMISSIONS_DATA,
@@ -54,6 +55,12 @@ interface InstitutionalContextType {
   calculatedKpis: CalculatedKpi[];
   currentSituationNarrative: string[];
   emergingRisks: EmergingRiskPrediction[];
+
+  // AI Agent Provider & n8n Integration
+  aiProvider: 'gemini' | 'n8n';
+  setAiProvider: (provider: 'gemini' | 'n8n') => void;
+  n8nConfig: N8nConfig;
+  updateN8nConfig: (config: Partial<N8nConfig>) => void;
 
   // Modals & Drawers
   selectedStudentForModal: StudentRecord | null;
@@ -102,6 +109,43 @@ export const InstitutionalProvider: React.FC<{ children: React.ReactNode }> = ({
   const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(null);
   const [isAlertsOpen, setIsAlertsOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+
+  // AI Provider & n8n Workflow Configuration
+  const [aiProvider, setAiProviderState] = useState<'gemini' | 'n8n'>(() => {
+    try {
+      return (localStorage.getItem('kpi_ai_provider') as any) || 'n8n';
+    } catch {
+      return 'n8n';
+    }
+  });
+
+  const setAiProvider = (provider: 'gemini' | 'n8n') => {
+    setAiProviderState(provider);
+    localStorage.setItem('kpi_ai_provider', provider);
+  };
+
+  const [n8nConfig, setN8nConfigState] = useState<N8nConfig>(() => {
+    try {
+      const saved = localStorage.getItem('kpi_n8n_config');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      workflowId: 'qF2Vo7eMkm90uYfP',
+      workflowUrl: 'https://amrushavanguri.app.n8n.cloud/workflow/qF2Vo7eMkm90uYfP',
+      webhookUrl: 'https://amrushavanguri.app.n8n.cloud/webhook/qF2Vo7eMkm90uYfP/chat',
+      testWebhookUrl: 'https://amrushavanguri.app.n8n.cloud/webhook-test/qF2Vo7eMkm90uYfP',
+      useTestMode: false,
+      enabled: true,
+    };
+  });
+
+  const updateN8nConfig = (updated: Partial<N8nConfig>) => {
+    setN8nConfigState((prev) => {
+      const fresh = { ...prev, ...updated };
+      localStorage.setItem('kpi_n8n_config', JSON.stringify(fresh));
+      return fresh;
+    });
+  };
 
   // Load datasets from localStorage or default
   const [admissionsData, setAdmissionsData] = useState<AdmissionYearData[]>(() => {
@@ -339,6 +383,10 @@ export const InstitutionalProvider: React.FC<{ children: React.ReactNode }> = ({
         setIsAlertsOpen,
         isSettingsOpen,
         setIsSettingsOpen,
+        aiProvider,
+        setAiProvider,
+        n8nConfig,
+        updateN8nConfig,
         addAdmissionRecord,
         updateAdmissionRecord,
         deleteAdmissionRecord,

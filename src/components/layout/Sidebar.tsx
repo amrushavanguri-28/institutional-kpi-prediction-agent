@@ -14,6 +14,8 @@ import {
   Sliders,
   Sparkles,
   ShieldCheck,
+  BrainCircuit,
+  Workflow,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -36,7 +38,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose })
     { name: 'Faculty Publications', icon: BookOpen, badge: null },
     { name: 'Research Funding', icon: BadgeIndianRupee, badge: null },
     { name: 'Faculty Work', icon: CheckSquare, badge: null },
-    { name: 'AI Assistant', icon: Bot, badge: 'AI Agent' },
+    { name: 'AI Assistant', icon: Workflow, badge: 'n8n Live' },
+    { name: 'AI Training & n8n Hub', icon: BrainCircuit, badge: 'Datasets' },
     { name: 'Reports', icon: FileBarChart, badge: null },
     { name: 'Data Management', icon: Database, badge: null },
   ];
@@ -110,7 +113,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onMobileClose })
                 {item.badge && (
                   <span
                     className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                      item.badge === 'AI Agent'
+                      item.badge === 'n8n Live'
+                        ? 'bg-orange-950 text-orange-300 border border-orange-800/80 font-mono'
+                        : item.badge === 'Datasets'
                         ? 'bg-indigo-950 text-indigo-300 border border-indigo-800/80'
                         : 'bg-amber-950 text-amber-300 border border-amber-800/80'
                     }`}

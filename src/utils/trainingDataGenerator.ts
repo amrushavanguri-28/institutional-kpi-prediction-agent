@@ -528,3 +528,172 @@ export function formatAdmissionsForecastCsv(data: AdmissionsForecastRecord[]): s
 export function formatLLMJsonl(samples: LLMTrainingSample[]): string {
   return samples.map((s) => JSON.stringify(s)).join('\n');
 }
+
+/**
+ * n8n AI Agent Function Calling / Tool Calling JSON Schemas
+ * Can be plugged directly into an n8n AI Agent node (OpenAI/Gemini/Anthropic Tool node)
+ */
+export interface N8nToolDefinition {
+  name: string;
+  description: string;
+  parameters: {
+    type: 'object';
+    properties: Record<string, any>;
+    required?: string[];
+  };
+  sampleOutput: Record<string, any>;
+}
+
+export const N8N_TOOL_DEFINITIONS: N8nToolDefinition[] = [
+  {
+    name: 'get_institutional_kpis',
+    description: 'Retrieves current status, YoY percentage changes, risk levels, and trends across all 5 monitored institutional KPIs (Admissions, Academic Risk, Faculty Publications, Research Funding, Faculty Work Completion).',
+    parameters: {
+      type: 'object',
+      properties: {
+        academicYear: {
+          type: 'string',
+          description: 'Academic cycle year, e.g., "2025-26" or "2024-25"',
+        },
+      },
+    },
+    sampleOutput: {
+      admissions: { value: 3300, changeYoY: -10.81, trend: 'Declining', risk: 'MEDIUM' },
+      studentAcademicRisk: { highRiskCount: 42, changeYoY: 13.51, trend: 'Increasing', risk: 'HIGH' },
+      facultyPublications: { count: 184, changeYoY: -4.17, trend: 'Stable', risk: 'LOW' },
+      researchFunding: { amountInr: '₹4.85 Crore', changeYoY: -11.82, trend: 'Declining', risk: 'HIGH' },
+      facultyWorkCompletion: { rate: 84.6, changeYoY: -5.2, trend: 'Declining', risk: 'MEDIUM' },
+    },
+  },
+  {
+    name: 'get_high_risk_students',
+    description: 'Retrieves students identified as High Academic Risk based on attendance < 60%, internal marks < 40%, and multiple backlogs.',
+    parameters: {
+      type: 'object',
+      properties: {
+        department: {
+          type: 'string',
+          enum: ['ALL', 'CSE', 'AIML', 'ECE', 'EEE', 'MECH'],
+          description: 'Filter by engineering department or ALL',
+        },
+        maxResults: {
+          type: 'number',
+          description: 'Maximum student dossiers to return (default: 10)',
+        },
+      },
+    },
+    sampleOutput: {
+      totalHighRisk: 42,
+      students: [
+        {
+          studentId: 'STU-2023-0104',
+          name: 'Rohan Sharma',
+          department: 'CSE',
+          semester: 5,
+          attendance: '54%',
+          internalMarks: 32,
+          backlogs: 4,
+          reason: 'Severe attendance deficit with 4 cumulative backlogs',
+          mentor: 'Dr. Ramesh Kumar',
+        },
+      ],
+    },
+  },
+  {
+    name: 'get_admissions_by_department',
+    description: 'Returns seat capacity, applications, admitted students, conversion rate, and vacancy percentage broken down by academic department.',
+    parameters: {
+      type: 'object',
+      properties: {
+        academicYear: {
+          type: 'string',
+          description: 'Academic year to analyze, e.g. "2025-26"',
+        },
+      },
+    },
+    sampleOutput: {
+      totalSanctioned: 4100,
+      totalAdmitted: 3300,
+      overallVacancyPct: 19.51,
+      breakdown: [
+        { department: 'CSE', capacity: 1250, admitted: 1240, vacancyPct: 0.8, risk: 'LOW' },
+        { department: 'AIML', capacity: 780, admitted: 780, vacancyPct: 0.0, risk: 'LOW' },
+        { department: 'ECE', capacity: 720, admitted: 570, vacancyPct: 20.8, risk: 'MEDIUM' },
+        { department: 'EEE', capacity: 720, admitted: 390, vacancyPct: 45.8, risk: 'HIGH' },
+        { department: 'MECH', capacity: 630, admitted: 320, vacancyPct: 49.2, risk: 'HIGH' },
+      ],
+    },
+  },
+  {
+    name: 'get_research_funding_portfolio',
+    description: 'Retrieves external funded grants, sponsoring agencies (DST, SERB, AICTE, DRDO, ISRO), disbursed amounts, and departmental allocations.',
+    parameters: {
+      type: 'object',
+      properties: {
+        department: {
+          type: 'string',
+          description: 'Department name or ALL',
+        },
+      },
+    },
+    sampleOutput: {
+      totalSanctionedInr: '₹4.85 Crore',
+      activeGrantsCount: 7,
+      topAgencies: ['DST', 'SERB', 'AICTE', 'DRDO'],
+      notableGrants: [
+        { title: 'Edge Computing for Smart Grid Fault Tolerant Architectures', agency: 'DST', amount: '₹1.25 Crore', dept: 'CSE' },
+      ],
+    },
+  },
+];
+
+/**
+ * Knowledge Base Chunks (RAG) for n8n Vector Store / Semantic Search
+ */
+export interface RAGKnowledgeChunk {
+  id: string;
+  topic: string;
+  category: 'Policy' | 'Risk Criteria' | 'KPI Formula' | 'Remedial Protocol';
+  content: string;
+}
+
+export const RAG_INSTITUTIONAL_KNOWLEDGE_BASE: RAGKnowledgeChunk[] = [
+  {
+    id: 'RAG-POL-01',
+    topic: 'Student Academic Risk Classification Thresholds',
+    category: 'Risk Criteria',
+    content: `Under university academic regulations, a student is classified into one of three risk tiers based on composite evaluation:
+1. HIGH RISK: Attendance < 60% OR (Internal Marks < 40% AND Backlogs >= 3). Requires immediate parent notification, mentor counseling, and mandatory remedial tutorial enrollment.
+2. MEDIUM RISK: Attendance between 60%-74% OR (Internal Marks between 40%-55% with 1-2 backlogs). Requires weekly attendance monitoring and peer tutoring.
+3. LOW RISK: Attendance >= 75%, Internal Marks >= 55%, and 0 backlogs. Student is in good academic standing.`,
+  },
+  {
+    id: 'RAG-POL-02',
+    topic: 'Institutional KPI Early Warning Rules',
+    category: 'KPI Formula',
+    content: `The Institutional Early Warning Engine calculates risk levels using longitudinal and YoY variance thresholds:
+- Admissions Risk: HIGH if YoY decline > 15% OR overall vacancy > 25%. MEDIUM if YoY decline between 5%-15% OR vacancy between 10%-25%. LOW if intake stable or growing.
+- Academic Risk: HIGH if high-risk student cohort grows by > 10% YoY OR exceeds 5% of total student body.
+- Research Funding: HIGH if YoY sanctioned funding declines by > 10% OR consecutive 2-year decline.
+- Faculty Work Completion: HIGH if completion rate < 75% OR overdue tasks > 20. MEDIUM if completion rate 75%-85%. LOW if completion rate >= 85%.`,
+  },
+  {
+    id: 'RAG-POL-03',
+    topic: 'AI Predictive Early Warning Protocol',
+    category: 'Policy',
+    content: `All forward-looking statements generated by the AI agent must be framed probabilistically, never as certain facts. Standard nomenclature includes:
+- 'may become high-risk if current trends continue'
+- 'is estimated to experience further intake compression'
+- 'early indicators warrant intervention before end-semester exams'
+Institutional recommendations must distinguish between observed historical data (facts) and forward-looking extrapolations (estimates).`,
+  },
+  {
+    id: 'RAG-POL-04',
+    topic: 'Branch-Specific Remedial Interventions for Admissions Declines',
+    category: 'Remedial Protocol',
+    content: `When core engineering disciplines (Mechanical, Electrical, Civil) demonstrate vacancy exceeding 40%:
+1. Department curriculum must embed cross-disciplinary emerging technologies (AI for Robotics, Electric Vehicle Systems, IoT Sensor Networks).
+2. College Outreach Committee must launch targeted school outreach, polytechnic lateral entry seminars, and career outcome webinars.
+3. Establish industry-sponsored lab clusters with placement guarantees to restore candidate demand.`,
+  },
+];
