@@ -1,0 +1,6 @@
+{
+  "name": "Institutional KPI Prediction Agent",
+  "description": "AI-powered college and university monitoring, risk detection, and predictive early-warning system.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
